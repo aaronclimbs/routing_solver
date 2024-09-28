@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -16,6 +17,12 @@ type Load struct {
 	ID      string
 	Pickup  Point
 	Dropoff Point
+}
+
+// Saving represents the savings between two loads
+type Saving struct {
+	i, j   int     
+	saving float64
 }
 
 // distance calculates the euclidean distance between two points
@@ -46,4 +53,39 @@ func parsePoint(s string) Point {
 	}
 
 	return Point{x, y}
+}
+
+// computeSavings calculates the savings for all pairs of loads.
+func computeSavings(loads []Load) []Saving {
+	depot := Point{0, 0}
+	var savingsList []Saving
+
+	// loop through each pair of loads (i, j) while i < j
+	for i := 0; i < len(loads); i++ {
+		for j := i + 1; j < len(loads); j++ {
+      
+      // this just utilizes the basic distance between the current pickup/dropoff
+      // to the depot vs to the next pickup/dropoff
+			distanceDepotToLoadI := distance(depot, loads[i].Pickup)
+			distanceLoadJToDepot := distance(loads[j].Dropoff, depot)
+			distanceLoadIToLoadJ := distance(loads[i].Dropoff, loads[j].Pickup)
+
+			savingValue := distanceDepotToLoadI + distanceLoadJToDepot - distanceLoadIToLoadJ
+
+      // will need to confirm the distance from the next load back to depo is not greater
+      // than max distance allowed
+
+      // append savings value to list
+			savingsList = append(savingsList, Saving{i: i, j: j, saving: savingValue})
+		}
+	}
+
+	return savingsList
+}
+
+// sortSavings sorts the savings in descending order
+func sortSavings(savings []Saving) {
+	sort.Slice(savings, func(a, b int) bool {
+		return savings[a].saving > savings[b].saving
+	})
 }

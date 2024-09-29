@@ -1,10 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"math"
-	"sort"
-	"strconv"
+	"os"
 	"strings"
 )
 
@@ -16,31 +15,6 @@ var (
 	DEPOT_LOCATION = Point{0, 0}
 )
 
-// Point represents a 2D point with x, y coordinates
-type Point struct {
-	x, y float64
-}
-
-// Load represents a task with a pickup and dropoff location
-type Load struct {
-	ID      string
-	Pickup  Point
-	Dropoff Point
-}
-
-// Saving represents the savings between two loads
-type Saving struct {
-	i, j   int
-	saving float64
-}
-
-// Route represents a vehicle route
-type Route struct {
-	loads         []int // ids of loads in this route
-	totalDistance float64
-	lastDropoff   Point // ultimately will be depot but need to keep track
-}
-
 // attemptToMerge tries to merge two routes if the total distance remains within the allowed limit
 // it returns true and the new merged route if successful
 func attemptToMerge(route1, route2 *Route, loads []Load) (bool, *Route) {
@@ -48,21 +22,21 @@ func attemptToMerge(route1, route2 *Route, loads []Load) (bool, *Route) {
 	currentLocation := DEPOT_LOCATION
 
 	// calculate the total distance for route1, then for route2, and back to depot
-	totalDistance = calculateRouteDistance(route1, loads, currentLocation)
+	totalDistance = CalculateRouteDistance(route1, loads, currentLocation)
 
 	// get the last dropoff from route1 and the first pickup from route2
 	if len(route1.loads) > 0 && len(route2.loads) > 0 {
 		lastDropoff := loads[route1.loads[len(route1.loads)-1]].Dropoff
 		firstPickup := loads[route2.loads[0]].Pickup
 		// add the distance between the last dropoff of route1 and the first pickup of route2
-		totalDistance += distance(lastDropoff, firstPickup)
+		totalDistance += Distance(lastDropoff, firstPickup)
 		currentLocation = firstPickup // update the current location to the first pickup of route2
 	}
 
-	totalDistance += calculateRouteDistance(route2, loads, currentLocation)
-	totalDistance += distance(currentLocation, DEPOT_LOCATION)
+	totalDistance += CalculateRouteDistance(route2, loads, currentLocation)
+	totalDistance += Distance(currentLocation, DEPOT_LOCATION)
 
-  fmt.Printf("totalDistance: %.3f\n", totalDistance)
+	//fmt.Printf("totalDistance: %.3f\n", totalDistance)
 
 	if totalDistance <= MAX_DISTANCE {
 		// then we can merge
@@ -79,53 +53,6 @@ func attemptToMerge(route1, route2 *Route, loads []Load) (bool, *Route) {
 	return false, nil
 }
 
-// calculateRouteDistance calculates the distance traveled for a given route.
-func calculateRouteDistance(route *Route, loads []Load, startLocation Point) float64 {
-	totalDistance := 0.0
-	currentLocation := startLocation
-
-	for _, loadIdx := range route.loads {
-		// add the distance to the pickup point and then to the dropoff point
-		totalDistance += distance(currentLocation, loads[loadIdx].Pickup)
-		totalDistance += distance(loads[loadIdx].Pickup, loads[loadIdx].Dropoff)
-		// update the current location to the dropoff point
-		currentLocation = loads[loadIdx].Dropoff
-		fmt.Printf("current_load: %d, totalDistance: %f\n", loadIdx, totalDistance)
-	}
-
-	return totalDistance
-}
-
-// distance calculates the euclidean distance between two points
-func distance(p1, p2 Point) float64 {
-	xDiff := p1.x - p2.x
-	yDiff := p1.y - p2.y
-	return math.Sqrt(xDiff*xDiff + yDiff*yDiff)
-}
-
-// parsePoint converts a string in the format "(x,y)" into a Point struct
-func parsePoint(s string) Point {
-	cleanedString := strings.TrimSpace(s)
-	cleanedString = strings.TrimPrefix(cleanedString, "(")
-	cleanedString = strings.TrimSuffix(cleanedString, ")")
-	coords := strings.Split(cleanedString, ",")
-
-	// this shouldn't happen but I've see one too many NPEs from filereaders
-	if len(coords) != 2 {
-		return DEPOT_LOCATION
-	}
-
-	x, errX := strconv.ParseFloat(strings.TrimSpace(coords[0]), 64)
-	y, errY := strconv.ParseFloat(strings.TrimSpace(coords[1]), 64)
-
-	// this shouldn't happen
-	if errX != nil || errY != nil {
-		return DEPOT_LOCATION
-	}
-
-	return Point{x, y}
-}
-
 // computeSavings calculates the savings for all pairs of loads.
 func computeSavings(loads []Load) []Saving {
 	var savingsList []Saving
@@ -136,9 +63,9 @@ func computeSavings(loads []Load) []Saving {
 
 			// this just utilizes the basic distance between the current pickup/dropoff
 			// to the depot vs to the next pickup/dropoff
-			distanceDepotToLoadI := distance(DEPOT_LOCATION, loads[i].Pickup)
-			distanceLoadJToDepot := distance(loads[j].Dropoff, DEPOT_LOCATION)
-			distanceLoadIToLoadJ := distance(loads[i].Dropoff, loads[j].Pickup)
+			distanceDepotToLoadI := Distance(DEPOT_LOCATION, loads[i].Pickup)
+			distanceLoadJToDepot := Distance(loads[j].Dropoff, DEPOT_LOCATION)
+			distanceLoadIToLoadJ := Distance(loads[i].Dropoff, loads[j].Pickup)
 
 			savingValue := distanceDepotToLoadI + distanceLoadJToDepot - distanceLoadIToLoadJ
 
@@ -153,13 +80,6 @@ func computeSavings(loads []Load) []Saving {
 	return savingsList
 }
 
-// sortSavings sorts the savings in descending order
-func sortSavings(savings []Saving) {
-	sort.Slice(savings, func(a, b int) bool {
-		return savings[a].saving > savings[b].saving
-	})
-}
-
 // mergeRoutes merges routes based on savings
 func mergeRoutes(savings []Saving, loads []Load) []*Route {
 	routes := make(map[int]*Route)
@@ -172,9 +92,9 @@ func mergeRoutes(savings []Saving, loads []Load) []*Route {
 		// to the load's pickup, then to the dropoff, and back to the depot.
 		// this works to start, but would obviously make the cost much higher as it would use
 		// the maximum number of vehicles
-		totalDistance := distance(DEPOT_LOCATION, load.Pickup) +
-			distance(load.Pickup, load.Dropoff) +
-			distance(load.Dropoff, DEPOT_LOCATION)
+		totalDistance := Distance(DEPOT_LOCATION, load.Pickup) +
+			Distance(load.Pickup, load.Dropoff) +
+			Distance(load.Dropoff, DEPOT_LOCATION)
 		route := &Route{
 			loads:         []int{idx},
 			totalDistance: totalDistance,
@@ -223,27 +143,66 @@ func mergeRoutes(savings []Saving, loads []Load) []*Route {
 	return finalRoutes
 }
 
-// extractSchedules generates a list of schedules from the routes
-func extractSchedules(routes []*Route, loads []Load) [][]string {
-	schedules := make([][]string, 0, len(routes)) 
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: ./main <input_file>")
+		return
+	}
 
-	for _, route := range routes {
-		schedule := make([]string, 0, len(route.loads))
+	inputFile := os.Args[1]
+	file, err := os.Open(inputFile)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
 
-		for _, loadIdx := range route.loads {
-			schedule = append(schedule, loads[loadIdx].ID)
+	loads := []Load{}
+
+	scanner := bufio.NewScanner(file)
+	gotHeader := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !gotHeader {
+			gotHeader = true
+			continue
 		}
 
-		schedules = append(schedules, schedule)
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		splits := strings.Fields(line)
+		if len(splits) != 3 {
+			fmt.Println("Invalid line:", line)
+			continue
+		}
+
+		id := splits[0]
+		pickup := ParsePoint(splits[1])
+		dropoff := ParsePoint(splits[2])
+
+		load := Load{
+			ID:      id,
+			Pickup:  pickup,
+			Dropoff: dropoff,
+		}
+		loads = append(loads, load)
 	}
 
-	return schedules
-}
-
-// printSchedules formats and prints the schedules
-func printSchedules(schedules [][]string) {
-	for _, schedule := range schedules {
-		fmt.Printf("[%s]\n", strings.Join(schedule, ","))
+	// handle any scanner errors
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return
 	}
-}
 
+	savings := computeSavings(loads)
+
+	SortSavings(savings)
+
+	finalRoutes := mergeRoutes(savings, loads)
+
+	schedules := ExtractSchedules(finalRoutes, loads)
+	PrintSchedules(schedules)
+}

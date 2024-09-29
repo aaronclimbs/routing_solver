@@ -4,11 +4,12 @@ import (
 	"math"
 	"testing"
 )
+
 const float64EqualityThreshold = 1e-9
 
 // source: https://stackoverflow.com/a/47969546
 func almostEqual(a, b float64) bool {
-    return math.Abs(a - b) <= float64EqualityThreshold
+	return math.Abs(a-b) <= float64EqualityThreshold
 }
 
 func TestComputeSavings(t *testing.T) {
@@ -19,9 +20,9 @@ func TestComputeSavings(t *testing.T) {
 	}
 
 	expected := []Saving{
-   {0, 1, 5.414213562373095},
-   {0, 2, 7.028206744201993},
-   {1, 2, 11.41088217038378},
+		{0, 1, 5.414213562373095},
+		{0, 2, 7.028206744201993},
+		{1, 2, 11.41088217038378},
 	}
 
 	savings := computeSavings(loads)
@@ -34,9 +35,9 @@ func TestComputeSavings(t *testing.T) {
 }
 
 func TestAttemptMerge(t *testing.T) {
-  // all should be 1.414 distance
+	// all should be 1.414 distance
 	loads := []Load{
-		{ID: "A", Pickup: Point{0, 0}, Dropoff: Point{1, 1}},   
+		{ID: "A", Pickup: Point{0, 0}, Dropoff: Point{1, 1}},
 		{ID: "B", Pickup: Point{1, 1}, Dropoff: Point{2, 2}},
 		{ID: "C", Pickup: Point{2, 2}, Dropoff: Point{3, 3}},
 		{ID: "D", Pickup: Point{3, 3}, Dropoff: Point{4, 4}},
@@ -61,9 +62,9 @@ func TestAttemptMerge(t *testing.T) {
 		}
 	}
 
-  // should be the sum of both floats distances
-  // also floats are a pain in tests
-	expectedDistance := 8.485281374 
+	// should be the sum of both floats distances
+	// also floats are a pain in tests
+	expectedDistance := 8.485281374
 	if !almostEqual(mergedRoute.totalDistance, expectedDistance) {
 		t.Errorf("expected total distance %.9f, got %.9f", expectedDistance, mergedRoute.totalDistance)
 	}
@@ -102,7 +103,6 @@ func TestMergeRoutes(t *testing.T) {
 	}
 }
 
-
 func TestExtractSchedules(t *testing.T) {
 	loads := []Load{
 		{ID: "A", Pickup: Point{0, 0}, Dropoff: Point{1, 1}},
@@ -115,7 +115,7 @@ func TestExtractSchedules(t *testing.T) {
 		{loads: []int{2}},    // Route 2 with load index 2
 	}
 
-	result := extractSchedules(routes, loads)
+	result := ExtractSchedules(routes, loads)
 
 	expected := [][]string{
 		{"A", "B"}, // Route 1: Loads A and B

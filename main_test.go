@@ -102,3 +102,38 @@ func TestMergeRoutes(t *testing.T) {
 	}
 }
 
+
+func TestExtractSchedules(t *testing.T) {
+	loads := []Load{
+		{ID: "A", Pickup: Point{0, 0}, Dropoff: Point{1, 1}},
+		{ID: "B", Pickup: Point{1, 1}, Dropoff: Point{2, 2}},
+		{ID: "C", Pickup: Point{2, 2}, Dropoff: Point{3, 3}},
+	}
+
+	routes := []*Route{
+		{loads: []int{0, 1}}, // Route 1 with load indices 0, 1
+		{loads: []int{2}},    // Route 2 with load index 2
+	}
+
+	result := extractSchedules(routes, loads)
+
+	expected := [][]string{
+		{"A", "B"}, // Route 1: Loads A and B
+		{"C"},      // Route 2: Load C
+	}
+
+	if len(result) != len(expected) {
+		t.Fatalf("expected %d schedules, got %d", len(expected), len(result))
+	}
+
+	for i, schedule := range result {
+		if len(schedule) != len(expected[i]) {
+			t.Errorf("expected schedule %v, got %v", expected[i], schedule)
+		}
+		for j, id := range schedule {
+			if id != expected[i][j] {
+				t.Errorf("expected load ID %s at position %d, got %s", expected[i][j], j, id)
+			}
+		}
+	}
+}

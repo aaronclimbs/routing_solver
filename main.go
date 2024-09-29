@@ -222,3 +222,28 @@ func mergeRoutes(savings []Saving, loads []Load) []*Route {
 
 	return finalRoutes
 }
+
+// extractSchedules generates a list of schedules from the routes
+func extractSchedules(routes []*Route, loads []Load) [][]string {
+	schedules := make([][]string, 0, len(routes)) 
+
+	for _, route := range routes {
+		schedule := make([]string, 0, len(route.loads))
+
+		for _, loadIdx := range route.loads {
+			schedule = append(schedule, loads[loadIdx].ID)
+		}
+
+		schedules = append(schedules, schedule)
+	}
+
+	return schedules
+}
+
+// printSchedules formats and prints the schedules
+func printSchedules(schedules [][]string) {
+	for _, schedule := range schedules {
+		fmt.Printf("[%s]\n", strings.Join(schedule, ","))
+	}
+}
+

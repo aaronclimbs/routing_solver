@@ -1,5 +1,10 @@
 # Vehicle Routing Program
 
+## Run unit tests
+```bash
+go test
+```
+
 ## Build binary
 ```bash
 go build

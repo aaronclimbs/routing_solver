@@ -64,7 +64,7 @@ func TestAttemptMerge(t *testing.T) {
 
 	// should be the sum of both floats distances
 	// also floats are a pain in tests
-	expectedDistance := 8.485281374
+	expectedDistance := 11.313708499
 	if !almostEqual(mergedRoute.totalDistance, expectedDistance) {
 		t.Errorf("expected total distance %.9f, got %.9f", expectedDistance, mergedRoute.totalDistance)
 	}

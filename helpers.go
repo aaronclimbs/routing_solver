@@ -21,11 +21,12 @@ func CalculateRouteDistance(route *Route, loads []Load, startLocation Point) flo
 	currentLocation := startLocation
 
 	for _, loadIdx := range route.loads {
+		load := loads[loadIdx]
 		// add the distance to the pickup point and then to the dropoff point
-		totalDistance += Distance(currentLocation, loads[loadIdx].Pickup)
-		totalDistance += Distance(loads[loadIdx].Pickup, loads[loadIdx].Dropoff)
+		totalDistance += Distance(currentLocation, load.Pickup)
+		totalDistance += Distance(load.Pickup, load.Dropoff)
 		// update the current location to the dropoff point
-		currentLocation = loads[loadIdx].Dropoff
+		currentLocation = load.Dropoff
 		// fmt.Printf("current_load: %d, totalDistance: %f\n", loadIdx, totalDistance)
 	}
 

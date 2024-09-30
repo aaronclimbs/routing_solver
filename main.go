@@ -15,44 +15,6 @@ var (
 	DEPOT_LOCATION = Point{0, 0}
 )
 
-// attemptToMerge tries to merge two routes if the total distance remains within the allowed limit
-// it returns true and the new merged route if successful
-func attemptToMerge(route1, route2 *Route, loads []Load) (bool, *Route) {
-	totalDistance := 0.0
-	currentLocation := DEPOT_LOCATION
-
-	// calculate the total distance for route1, then for route2, and back to depot
-	totalDistance = CalculateRouteDistance(route1, loads, currentLocation)
-
-	// get the last dropoff from route1 and the first pickup from route2
-	if len(route1.loads) > 0 && len(route2.loads) > 0 {
-		lastDropoff := loads[route1.loads[len(route1.loads)-1]].Dropoff
-		firstPickup := loads[route2.loads[0]].Pickup
-		// add the distance between the last dropoff of route1 and the first pickup of route2
-		totalDistance += Distance(lastDropoff, firstPickup)
-		currentLocation = firstPickup // update the current location to the first pickup of route2
-	}
-
-	totalDistance += CalculateRouteDistance(route2, loads, currentLocation)
-	totalDistance += Distance(currentLocation, DEPOT_LOCATION)
-
-	//fmt.Printf("totalDistance: %.3f\n", totalDistance)
-
-	if totalDistance <= MAX_DISTANCE {
-		// then we can merge
-		mergedLoads := append(route1.loads, route2.loads...)
-		mergedRoute := &Route{
-			loads:         mergedLoads,
-			totalDistance: totalDistance,
-			lastDropoff:   currentLocation,
-		}
-		return true, mergedRoute
-	}
-
-	// false if the merge would exceed max distance allowed
-	return false, nil
-}
-
 // computeSavings calculates the savings for all pairs of loads.
 func computeSavings(loads []Load) []Saving {
 	var savingsList []Saving
@@ -78,6 +40,45 @@ func computeSavings(loads []Load) []Saving {
 	}
 
 	return savingsList
+}
+
+func attemptToMerge(route1, route2 *Route, loads []Load) (bool, *Route) {
+	totalDistance := 0.0
+	currentLocation := DEPOT_LOCATION
+
+	totalDistance += CalculateRouteDistance(route1, loads, currentLocation)
+	if len(route1.loads) > 0 {
+		// update currentlocation to last dropoff location in route
+		currentLocation = loads[route1.loads[len(route1.loads)-1]].Dropoff
+	}
+
+	// add distance from last dropoff of route1 to first pickup of route2
+	if len(route2.loads) > 0 {
+		firstPickup := loads[route2.loads[0]].Pickup
+		totalDistance += Distance(currentLocation, firstPickup)
+		currentLocation = firstPickup
+	}
+
+	totalDistance += CalculateRouteDistance(route2, loads, currentLocation)
+	if len(route2.loads) > 0 {
+		// update currentlocation to last dropoff location in route
+		currentLocation = loads[route2.loads[len(route2.loads)-1]].Dropoff
+	}
+
+	// Add distance back to depot
+	totalDistance += Distance(currentLocation, DEPOT_LOCATION)
+
+	// Check against MAX_DISTANCE
+	if totalDistance <= MAX_DISTANCE {
+		mergedLoads := append(route1.loads, route2.loads...)
+		mergedRoute := &Route{
+			loads:         mergedLoads,
+			totalDistance: totalDistance,
+			lastDropoff:   currentLocation,
+		}
+		return true, mergedRoute
+	}
+	return false, nil
 }
 
 // mergeRoutes merges routes based on savings

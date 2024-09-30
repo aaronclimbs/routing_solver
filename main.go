@@ -9,6 +9,8 @@ import (
 
 const (
 	MAX_DISTANCE = 720.0
+
+// COST_PENALTY = 500
 )
 
 var (
@@ -67,6 +69,11 @@ func attemptToMerge(route1, route2 *Route, loads []Load) (bool, *Route) {
 
 	// Add distance back to depot
 	totalDistance += Distance(currentLocation, DEPOT_LOCATION)
+
+	// separateCost := (2 * COST_PENALTY) + route1.totalDistance + route2.totalDistance
+
+	// // if we merge them, we avoid one vehicle cost
+	// mergedCost := COST_PENALTY + totalDistance
 
 	// Check against MAX_DISTANCE
 	if totalDistance <= MAX_DISTANCE {
